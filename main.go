@@ -97,7 +97,7 @@ func newNode() *sprite.Node {
 }
 
 func loadScene() {
-	texs := loadTextures()
+	// scene: base texture
 	scene = &sprite.Node{}
 	eng.Register(scene)
 	eng.SetTransform(scene, f32.Affine{
@@ -105,6 +105,8 @@ func loadScene() {
 		{0, 1, 0},
 	})
 
+	// textures
+	texs := loadTextures()
 	node = newNode()
 	eng.SetSubTex(node, texs[texGopherR])
 	eng.SetTransform(node, f32.Affine{
