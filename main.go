@@ -33,6 +33,13 @@ var (
 	node      *sprite.Node
 )
 
+var (
+	spriteSizeX float32 = 140
+	spriteSizeY float32 = 90
+	screenSizeX float32 = 1080 / 2
+	screenSizeY float32 = 1920 / 2
+)
+
 func main() {
 	app.Main(func(a app.App) {
 		var glctx gl.Context
@@ -60,8 +67,8 @@ func main() {
 				a.Send(paint.Event{}) // keep animating
 			case touch.Event:
 				eng.SetTransform(node, f32.Affine{
-					{72, 0, e.X},
-					{0, 72, e.Y},
+					{spriteSizeX, 0, e.X - spriteSizeX/2}, // divide by 2 means center of sprite
+					{0, spriteSizeY, e.Y - spriteSizeY/2}, // divide by 2 means center of sprite
 				})
 			}
 		}
@@ -110,8 +117,8 @@ func loadScene() {
 	node = newNode()
 	eng.SetSubTex(node, texs[texGopherR])
 	eng.SetTransform(node, f32.Affine{
-		{72, 0, 0},
-		{0, 72, 0},
+		{spriteSizeX, 0, 0},
+		{0, spriteSizeY, 0},
 	})
 
 }
@@ -137,7 +144,7 @@ func loadTextures() []sprite.SubTex {
 	}
 
 	return []sprite.SubTex{
-		texGopherR: sprite.SubTex{t, image.Rect(152, 10, 152+140, 10+90)},
+		texGopherR: sprite.SubTex{t, image.Rect(152, 10, 152+int(spriteSizeX), 10+int(spriteSizeY))},
 	}
 }
 
