@@ -3,6 +3,7 @@
 package main
 
 import (
+	"fmt"
 	"image"
 	"log"
 	"time"
@@ -38,8 +39,8 @@ var (
 	spriteSizeY float32 = 90
 	screenSizeX float32 = 1080 / 2
 	screenSizeY float32 = 1920 / 2
-	angle       float32 = 0
 	affine      *f32.Affine
+	r           float32 = 45
 )
 
 func main() {
@@ -69,9 +70,14 @@ func main() {
 				a.Send(paint.Event{}) // keep animating
 			case touch.Event:
 				// Rotation
-				radian := 1 * 3.141592653 / 180
+				radian := r * 3.141592653 / 180
+				//r += 1
 				affine.Rotate(affine, float32(radian))
 				eng.SetTransform(node, *affine)
+
+				fmt.Println(affine)
+				fmt.Println("b = ", affine[0][0], affine[1][0])
+				//fmt.Println("d = ", affine[0][0])
 			}
 		}
 	})
@@ -119,8 +125,8 @@ func loadScene() {
 	node = newNode()
 	eng.SetSubTex(node, texs[texGopherR])
 	affine = &f32.Affine{
-		{spriteSizeX, 0, screenSizeX/2 - spriteSizeX/2},
-		{0, spriteSizeY, screenSizeY/2 - spriteSizeY/2},
+		{spriteSizeX, 0, 0},
+		{0, spriteSizeY, 0},
 	}
 	eng.SetTransform(node, *affine)
 }
