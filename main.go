@@ -3,7 +3,6 @@
 package main
 
 import (
-	"fmt"
 	"image"
 	"log"
 	"time"
@@ -37,10 +36,12 @@ var (
 var (
 	spriteSizeX float32 = 140
 	spriteSizeY float32 = 90
-	screenSizeX float32 = 1080 / 2
-	screenSizeY float32 = 1920 / 2
+	screenSizeX float32 = 800
+	screenSizeY float32 = 800
 	affine      *f32.Affine
-	r           float32 = 45
+	r           float32 = 0
+	curPosX     float32 = 0
+	curPosY     float32 = 0
 )
 
 func main() {
@@ -69,15 +70,16 @@ func main() {
 				a.Publish()
 				a.Send(paint.Event{}) // keep animating
 			case touch.Event:
-				// Rotation
-				radian := r * 3.141592653 / 180
-				//r += 1
-				affine.Rotate(affine, float32(radian))
-				eng.SetTransform(node, *affine)
-
-				fmt.Println(affine)
-				fmt.Println("b = ", affine[0][0], affine[1][0])
-				//fmt.Println("d = ", affine[0][0])
+				if e.Type == touch.TypeMove {
+					// Rotation
+					radian := r * 3.141592653 / 180
+					r += 5
+					affine = &f32.Affine{
+						{spriteSizeX * f32.Cos(radian), spriteSizeY * -f32.Sin(radian), e.X - (spriteSizeX/2)*f32.Cos(radian) + (spriteSizeY/2)*f32.Sin(radian)},
+						{spriteSizeX * f32.Sin(radian), spriteSizeY * f32.Cos(radian), e.Y - (spriteSizeY/2)*f32.Cos(radian) - (spriteSizeX/2)*f32.Sin(radian)},
+					}
+					eng.SetTransform(node, *affine)
+				}
 			}
 		}
 	})
@@ -125,8 +127,8 @@ func loadScene() {
 	node = newNode()
 	eng.SetSubTex(node, texs[texGopherR])
 	affine = &f32.Affine{
-		{spriteSizeX, 0, 0},
-		{0, spriteSizeY, 0},
+		{spriteSizeX, 0, screenSizeX/2 - spriteSizeX/2},
+		{0, spriteSizeY, screenSizeY/2 - spriteSizeY/2},
 	}
 	eng.SetTransform(node, *affine)
 }
@@ -152,7 +154,7 @@ func loadTextures() []sprite.SubTex {
 	}
 
 	return []sprite.SubTex{
-		texGopherR: sprite.SubTex{t, image.Rect(152, 10, 152+140, 10+90)},
+		texGopherR: sprite.SubTex{t, image.Rect(152, 10, 152+int(spriteSizeX), 10+int(spriteSizeY))},
 	}
 }
 
