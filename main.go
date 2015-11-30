@@ -3,7 +3,6 @@
 package main
 
 import (
-	"fmt"
 	"image"
 	"log"
 	"time"
@@ -38,10 +37,12 @@ type KonaSprite struct {
 	node   *sprite.Node
 	width  float32
 	height float32
-	x      float32
-	y      float32
+	posX   float32
+	posY   float32
 	radian float32
 }
+
+var Gopher KonaSprite
 
 var (
 	spriteSizeX float32 = 140
@@ -49,7 +50,6 @@ var (
 	screenSizeX float32 = 800
 	screenSizeY float32 = 800
 	affine      *f32.Affine
-	Gopher      *KonaSprite
 )
 
 func main() {
@@ -75,40 +75,47 @@ func main() {
 					continue
 				}
 
-				Gopher.rotate(Gopher.radian + 5)
+				Gopher.Apply()
 
 				onPaint(glctx, sz)
 				a.Publish()
 				a.Send(paint.Event{}) // keep animating
 			case touch.Event:
-				if e.Type == touch.TypeEnd {
-					Gopher.move(e.X, e.Y)
-				}
+				Gopher.Move(e.X, e.Y)
+				Gopher.Rotate(Gopher.radian + 5)
+				//Gopher.Size(Gopher.width, Gopher.height)
 			}
 		}
 	})
 }
 
-func (sprite *KonaSprite) move(x float32, y float32) {
-	fmt.Println("move to ", x, y)
-	sprite.x = x
-	sprite.y = y
+func (sprite *KonaSprite) Move(x float32, y float32) {
+	sprite.posX = x
+	sprite.posY = y
 }
 
-func (sprite *KonaSprite) rotate(radian float32) {
-	// Rotation
+func (sprite *KonaSprite) Rotate(radian float32) {
 	sprite.radian = radian
 }
 
-func (sprite *KonaSprite) apply() {
-	curPosX := sprite.x
-	curPosY := sprite.x
+func (sprite *KonaSprite) Size(w float32, h float32) {
+	sprite.width = w
+	sprite.height = h
+}
+
+func (sprite *KonaSprite) Apply() {
+	curPosX := sprite.posX
+	curPosY := sprite.posY
 	r := sprite.radian * 3.141592653 / 180
 	affine = &f32.Affine{
-		{spriteSizeX * f32.Cos(r), spriteSizeY * -f32.Sin(r),
-			curPosX - (spriteSizeX/2)*f32.Cos(r) + (spriteSizeY/2)*f32.Sin(r)},
-		{spriteSizeX * f32.Sin(r), spriteSizeY * f32.Cos(r),
-			curPosY - (spriteSizeY/2)*f32.Cos(r) - (spriteSizeX/2)*f32.Sin(r)},
+		//{spriteSizeX * f32.Cos(r), spriteSizeY * -f32.Sin(r),
+		//	curPosX - (spriteSizeX/2)*f32.Cos(r) + (spriteSizeY/2)*f32.Sin(r)},
+		//{spriteSizeX * f32.Sin(r), spriteSizeY * f32.Cos(r),
+		//	curPosY - (spriteSizeY/2)*f32.Cos(r) - (spriteSizeX/2)*f32.Sin(r)},
+		{sprite.width * f32.Cos(r), sprite.height * -f32.Sin(r),
+			curPosX - (sprite.width/2)*f32.Cos(r) + (sprite.height/2)*f32.Sin(r)},
+		{sprite.width * f32.Sin(r), sprite.height * f32.Cos(r),
+			curPosY - (sprite.height/2)*f32.Cos(r) - (sprite.width/2)*f32.Sin(r)},
 	}
 	eng.SetTransform(node, *affine)
 }
@@ -155,12 +162,11 @@ func loadScene() {
 	node = newNode()
 	eng.SetSubTex(node, texs[texGopherR])
 
-	Gopher.x = screenSizeX / 2
-	Gopher.y = screenSizeY / 2
+	Gopher.Move(screenSizeX/2, screenSizeY/2)
 	Gopher.width = spriteSizeX
 	Gopher.height = spriteSizeY
 	Gopher.radian = 0
-	Gopher.apply()
+	Gopher.Apply()
 
 	//affine = &f32.Affine{
 	//	{Gopher.width, 0, Gopher.x},
