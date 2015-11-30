@@ -3,6 +3,7 @@
 package main
 
 import (
+	"fmt"
 	"image"
 	"log"
 	"time"
@@ -66,23 +67,37 @@ func main() {
 				if glctx == nil || e.External {
 					continue
 				}
+				rotate()
 				onPaint(glctx, sz)
 				a.Publish()
 				a.Send(paint.Event{}) // keep animating
 			case touch.Event:
-				if e.Type == touch.TypeMove {
-					// Rotation
-					radian := r * 3.141592653 / 180
-					r += 5
-					affine = &f32.Affine{
-						{spriteSizeX * f32.Cos(radian), spriteSizeY * -f32.Sin(radian), e.X - (spriteSizeX/2)*f32.Cos(radian) + (spriteSizeY/2)*f32.Sin(radian)},
-						{spriteSizeX * f32.Sin(radian), spriteSizeY * f32.Cos(radian), e.Y - (spriteSizeY/2)*f32.Cos(radian) - (spriteSizeX/2)*f32.Sin(radian)},
-					}
-					eng.SetTransform(node, *affine)
+				if e.Type == touch.TypeEnd {
+					move(e.X, e.Y)
 				}
 			}
 		}
 	})
+}
+
+func move(x float32, y float32) {
+	fmt.Println("move to ", x, y)
+	curPosX = x
+	curPosY = y
+}
+
+func rotate() {
+	// Rotation
+	radian := r * 3.141592653 / 180
+	r += 5
+	affine = &f32.Affine{
+		{spriteSizeX * f32.Cos(radian), spriteSizeY * -f32.Sin(radian),
+			curPosX - (spriteSizeX/2)*f32.Cos(radian) + (spriteSizeY/2)*f32.Sin(radian)},
+		{spriteSizeX * f32.Sin(radian), spriteSizeY * f32.Cos(radian),
+			curPosY - (spriteSizeY/2)*f32.Cos(radian) - (spriteSizeX/2)*f32.Sin(radian)},
+	}
+	eng.SetTransform(node, *affine)
+
 }
 
 func onStart(glctx gl.Context) {
@@ -126,10 +141,14 @@ func loadScene() {
 	texs := loadTextures()
 	node = newNode()
 	eng.SetSubTex(node, texs[texGopherR])
+
+	curPosX = screenSizeX / 2
+	curPosY = screenSizeY / 2
 	affine = &f32.Affine{
-		{spriteSizeX, 0, screenSizeX/2 - spriteSizeX/2},
-		{0, spriteSizeY, screenSizeY/2 - spriteSizeY/2},
+		{spriteSizeX, 0, curPosX},
+		{0, spriteSizeY, curPosY},
 	}
+	fmt.Println("curPos = ", curPosX, curPosY)
 	eng.SetTransform(node, *affine)
 }
 
