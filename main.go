@@ -47,8 +47,8 @@ var Gopher KonaSprite
 var (
 	spriteSizeX float32 = 140
 	spriteSizeY float32 = 90
-	screenSizeX float32 = 800
-	screenSizeY float32 = 800
+	screenSizeX float32 = 1080 / 2
+	screenSizeY float32 = 1920 / 2
 	affine      *f32.Affine
 )
 
