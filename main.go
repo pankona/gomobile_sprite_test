@@ -8,6 +8,7 @@ import (
 	"time"
 
 	_ "image/jpeg"
+	_ "image/png"
 
 	"golang.org/x/mobile/app"
 	"golang.org/x/mobile/asset"
@@ -25,12 +26,13 @@ import (
 )
 
 var (
-	startTime = time.Now()
-	images    *glutil.Images
-	eng       sprite.Engine
-	scene     *sprite.Node
-	fps       *debug.FPS
-	node      *sprite.Node
+	startTime  = time.Now()
+	images     *glutil.Images
+	eng        sprite.Engine
+	scene      *sprite.Node
+	fps        *debug.FPS
+	ballDeltaX float32 = 10
+	ballDeltaY float32 = 10
 )
 
 type KonaSprite struct {
@@ -43,12 +45,13 @@ type KonaSprite struct {
 }
 
 var Gopher KonaSprite
+var Ball KonaSprite
 
 var (
 	spriteSizeX float32 = 140
 	spriteSizeY float32 = 90
-	screenSizeX float32 = 800
-	screenSizeY float32 = 800
+	screenSizeX float32 = 1080 / 2
+	screenSizeY float32 = 1920 / 2
 	affine      *f32.Affine
 )
 
@@ -62,6 +65,10 @@ func main() {
 				switch e.Crosses(lifecycle.StageVisible) {
 				case lifecycle.CrossOn:
 					glctx, _ = e.DrawContext.(gl.Context)
+					// transparency of png
+					glctx.Enable(gl.BLEND)
+					glctx.BlendEquation(gl.FUNC_ADD)
+					glctx.BlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
 					onStart(glctx)
 					a.Send(paint.Event{})
 				case lifecycle.CrossOff:
@@ -76,6 +83,9 @@ func main() {
 				}
 
 				Gopher.Apply()
+
+				Ball.MoveWithReflection()
+				Ball.Apply()
 
 				onPaint(glctx, sz)
 				a.Publish()
@@ -103,21 +113,29 @@ func (sprite *KonaSprite) Size(w float32, h float32) {
 	sprite.height = h
 }
 
+func (sprite *KonaSprite) MoveWithReflection() {
+	sprite.posX += ballDeltaX
+	sprite.posY += ballDeltaY
+	if sprite.posX > screenSizeX || sprite.posX < 0 {
+		ballDeltaX *= -1
+	}
+
+	if sprite.posY > screenSizeY || sprite.posY < 0 {
+		ballDeltaY *= -1
+	}
+}
+
 func (sprite *KonaSprite) Apply() {
 	curPosX := sprite.posX
 	curPosY := sprite.posY
 	r := sprite.radian * 3.141592653 / 180
 	affine = &f32.Affine{
-		//{spriteSizeX * f32.Cos(r), spriteSizeY * -f32.Sin(r),
-		//	curPosX - (spriteSizeX/2)*f32.Cos(r) + (spriteSizeY/2)*f32.Sin(r)},
-		//{spriteSizeX * f32.Sin(r), spriteSizeY * f32.Cos(r),
-		//	curPosY - (spriteSizeY/2)*f32.Cos(r) - (spriteSizeX/2)*f32.Sin(r)},
 		{sprite.width * f32.Cos(r), sprite.height * -f32.Sin(r),
 			curPosX - (sprite.width/2)*f32.Cos(r) + (sprite.height/2)*f32.Sin(r)},
 		{sprite.width * f32.Sin(r), sprite.height * f32.Cos(r),
 			curPosY - (sprite.height/2)*f32.Cos(r) - (sprite.width/2)*f32.Sin(r)},
 	}
-	eng.SetTransform(node, *affine)
+	eng.SetTransform(sprite.node, *affine)
 }
 
 func onStart(glctx gl.Context) {
@@ -157,30 +175,31 @@ func loadScene() {
 		{0, 1, 0},
 	})
 
-	// textures
-	texs := loadTextures()
-	node = newNode()
-	eng.SetSubTex(node, texs[texGopherR])
-
+	// load Gopher
 	Gopher.Move(screenSizeX/2, screenSizeY/2)
 	Gopher.width = spriteSizeX
 	Gopher.height = spriteSizeY
 	Gopher.radian = 0
+	tex_gopher := loadTextures("waza-gophers.jpeg", image.Rect(152, 10, 152+int(Gopher.width), 10+int(Gopher.height)))
+	Gopher.node = newNode()
+	eng.SetSubTex(Gopher.node, tex_gopher)
 	Gopher.Apply()
 
-	//affine = &f32.Affine{
-	//	{Gopher.width, 0, Gopher.x},
-	//	{0, Gopher.height, Gopher.y},
-	//}
-	//eng.SetTransform(node, *affine)
+	// load Ball
+	Ball.Move(screenSizeX/3, screenSizeY/3)
+	Ball.width = 48
+	Ball.height = 48
+	Ball.radian = 0
+	tex_ball := loadTextures("ball.png", image.Rect(0, 0, int(Ball.width), int(Ball.height)))
+	Ball.node = newNode()
+	eng.SetSubTex(Ball.node, tex_ball)
+
+	Ball.Apply()
 }
 
-const (
-	texGopherR = iota
-)
+func loadTextures(assetName string, rect image.Rectangle) sprite.SubTex {
 
-func loadTextures() []sprite.SubTex {
-	a, err := asset.Open("waza-gophers.jpeg")
+	a, err := asset.Open(assetName)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -195,9 +214,7 @@ func loadTextures() []sprite.SubTex {
 		log.Fatal(err)
 	}
 
-	return []sprite.SubTex{
-		texGopherR: sprite.SubTex{t, image.Rect(152, 10, 152+int(spriteSizeX), 10+int(spriteSizeY))},
-	}
+	return sprite.SubTex{t, rect}
 }
 
 type arrangerFunc func(e sprite.Engine, n *sprite.Node, t clock.Time)
