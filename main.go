@@ -45,8 +45,11 @@ type KonaSprite struct {
 	radian float32
 }
 
-var Gopher KonaSprite
-var Ball KonaSprite
+var (
+	Title  KonaSprite
+	Gopher KonaSprite
+	Ball   KonaSprite
+)
 
 var (
 	spriteSizeX float32 = 140
@@ -85,7 +88,7 @@ func main() {
 
 				switch sceneId {
 				case 0:
-					Gopher.Apply()
+					Title.Apply()
 				case 1:
 					Gopher.Apply()
 					Ball.MoveWithReflection()
@@ -96,9 +99,12 @@ func main() {
 				a.Publish()
 				a.Send(paint.Event{}) // keep animating
 			case touch.Event:
-				Gopher.Move(e.X, e.Y)
-				Gopher.Rotate(Gopher.radian + 5)
-				//Gopher.Size(Gopher.width, Gopher.height)
+				switch sceneId {
+				case 1:
+					Gopher.Move(e.X, e.Y)
+					Gopher.Rotate(Gopher.radian + 5)
+					//Gopher.Size(Gopher.width, Gopher.height)
+				}
 				if e.Type == touch.TypeEnd {
 					sceneId = 1
 					loadScene(sceneId)
@@ -189,14 +195,14 @@ func loadScene(sceneId int) {
 	switch sceneId {
 	case 0:
 		// load Gopher
-		Gopher.Move(screenSizeX/2, screenSizeY/2)
-		Gopher.width = spriteSizeX
-		Gopher.height = spriteSizeY
-		Gopher.radian = 0
-		tex_gopher := loadTextures("waza-gophers.jpeg", image.Rect(152, 10, 152+int(Gopher.width), 10+int(Gopher.height)))
-		Gopher.node = newNode()
-		eng.SetSubTex(Gopher.node, tex_gopher)
-		Gopher.Apply()
+		Title.Move(screenSizeX/2, screenSizeY/2)
+		Title.width = screenSizeX
+		Title.height = screenSizeY
+		Title.radian = 0
+		tex_title := loadTextures("title.png", image.Rect(0, 0, int(screenSizeX), int(screenSizeY)))
+		Title.node = newNode()
+		eng.SetSubTex(Title.node, tex_title)
+		Title.Apply()
 
 	case 1:
 		// load Gopher
