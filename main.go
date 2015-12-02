@@ -33,6 +33,7 @@ var (
 	fps        *debug.FPS
 	ballDeltaX float32 = 10
 	ballDeltaY float32 = 10
+	sceneId    int     = 0
 )
 
 type KonaSprite struct {
@@ -44,8 +45,11 @@ type KonaSprite struct {
 	radian float32
 }
 
-var Gopher KonaSprite
-var Ball KonaSprite
+var (
+	Title  KonaSprite
+	Gopher KonaSprite
+	Ball   KonaSprite
+)
 
 var (
 	spriteSizeX float32 = 140
@@ -82,18 +86,29 @@ func main() {
 					continue
 				}
 
-				Gopher.Apply()
-
-				Ball.MoveWithReflection()
-				Ball.Apply()
+				switch sceneId {
+				case 0:
+					Title.Apply()
+				case 1:
+					Gopher.Apply()
+					Ball.MoveWithReflection()
+					Ball.Apply()
+				}
 
 				onPaint(glctx, sz)
 				a.Publish()
 				a.Send(paint.Event{}) // keep animating
 			case touch.Event:
-				Gopher.Move(e.X, e.Y)
-				Gopher.Rotate(Gopher.radian + 5)
-				//Gopher.Size(Gopher.width, Gopher.height)
+				switch sceneId {
+				case 1:
+					Gopher.Move(e.X, e.Y)
+					Gopher.Rotate(Gopher.radian + 5)
+					//Gopher.Size(Gopher.width, Gopher.height)
+				}
+				if e.Type == touch.TypeEnd {
+					sceneId = 1
+					loadScene(sceneId)
+				}
 			}
 		}
 	})
@@ -141,8 +156,7 @@ func (sprite *KonaSprite) Apply() {
 func onStart(glctx gl.Context) {
 	images = glutil.NewImages(glctx)
 	fps = debug.NewFPS(images)
-	eng = glsprite.Engine(images)
-	loadScene()
+	loadScene(sceneId)
 }
 
 func onStop() {
@@ -166,8 +180,11 @@ func newNode() *sprite.Node {
 	return n
 }
 
-func loadScene() {
-	// scene: base texture
+func loadScene(sceneId int) {
+	if eng != nil {
+		eng.Release()
+	}
+	eng = glsprite.Engine(images)
 	scene = &sprite.Node{}
 	eng.Register(scene)
 	eng.SetTransform(scene, f32.Affine{
@@ -175,26 +192,39 @@ func loadScene() {
 		{0, 1, 0},
 	})
 
-	// load Gopher
-	Gopher.Move(screenSizeX/2, screenSizeY/2)
-	Gopher.width = spriteSizeX
-	Gopher.height = spriteSizeY
-	Gopher.radian = 0
-	tex_gopher := loadTextures("waza-gophers.jpeg", image.Rect(152, 10, 152+int(Gopher.width), 10+int(Gopher.height)))
-	Gopher.node = newNode()
-	eng.SetSubTex(Gopher.node, tex_gopher)
-	Gopher.Apply()
+	switch sceneId {
+	case 0:
+		// load Gopher
+		Title.Move(screenSizeX/2, screenSizeY/2)
+		Title.width = screenSizeX
+		Title.height = screenSizeY
+		Title.radian = 0
+		tex_title := loadTextures("title.png", image.Rect(0, 0, int(screenSizeX), int(screenSizeY)))
+		Title.node = newNode()
+		eng.SetSubTex(Title.node, tex_title)
+		Title.Apply()
 
-	// load Ball
-	Ball.Move(screenSizeX/3, screenSizeY/3)
-	Ball.width = 48
-	Ball.height = 48
-	Ball.radian = 0
-	tex_ball := loadTextures("ball.png", image.Rect(0, 0, int(Ball.width), int(Ball.height)))
-	Ball.node = newNode()
-	eng.SetSubTex(Ball.node, tex_ball)
+	case 1:
+		// load Gopher
+		Gopher.Move(screenSizeX/2, screenSizeY/2)
+		Gopher.width = spriteSizeX
+		Gopher.height = spriteSizeY
+		Gopher.radian = 0
+		tex_gopher := loadTextures("waza-gophers.jpeg", image.Rect(152, 10, 152+int(Gopher.width), 10+int(Gopher.height)))
+		Gopher.node = newNode()
+		eng.SetSubTex(Gopher.node, tex_gopher)
+		Gopher.Apply()
 
-	Ball.Apply()
+		// load Ball
+		Ball.Move(screenSizeX/3, screenSizeY/3)
+		Ball.width = 48
+		Ball.height = 48
+		Ball.radian = 0
+		tex_ball := loadTextures("ball.png", image.Rect(0, 0, int(Ball.width), int(Ball.height)))
+		Ball.node = newNode()
+		eng.SetSubTex(Ball.node, tex_ball)
+		Ball.Apply()
+	}
 }
 
 func loadTextures(assetName string, rect image.Rectangle) sprite.SubTex {
