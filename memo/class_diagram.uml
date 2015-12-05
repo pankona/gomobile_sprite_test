@@ -1,0 +1,60 @@
+
+
+@startuml
+
+class app {
+    gm game_manager
+}
+
+class game_manager {
+    sm scene_manager
+    initialize()
+    update()
+    finalize()
+    onTouch(x, y)
+}
+
+class scene_manager {
+    current_scene scene
+    st scene_table
+    onTouch(x, y)
+}
+
+class scene_interface {
+    init(endscene_callback)
+    startscene()
+    update()
+    onTouch(x, y)
+}
+
+class title_scene {
+    models
+    views
+    controller
+    init(endscene_callback)
+    startscene()
+    update()
+}
+
+class stage1_scene {
+    models
+    views
+    controller
+    init(endscene_callback)
+    startscene()
+    update()
+}
+
+app <|-- game_manager
+game_manager <|-- scene_manager
+scene_manager <|-- scene
+scene <-- models
+scene <-- views
+scene <-- controller
+scene <|-- scene_interface
+scene_manager <|-- title_scene
+scene_manager <|-- stage1_scene
+
+
+@enduml
+
